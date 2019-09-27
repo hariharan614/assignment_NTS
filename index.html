@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Assignment</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <style>
+    	p {
+    		line-height: 2em;
+    		font-size: 1.5em;
+    	}
+    	.lightHighlight {
+    		color: #706d73;
+    		font-size: 1.2em;
+    	}
+    </style>
+  </head>
+  <body>
+
+  	<div class="container">
+  		<div class="row mb-3 mt-3">
+  			<div class="col-md-6">
+			  	<h2> Assignment </h2>
+			</div>
+			<div class="col-md-6">
+			  	<button class="btn btn-primary float-right" onclick="generateContentAsPDF()">Download <small>(PDF Article)<small></button>
+			</div>
+		</div>
+		<hr>
+		<div id="article" class="row"></div>
+	</div>
+
+  </body>
+
+  <script
+  src="https://code.jquery.com/jquery-3.4.1.min.js"
+  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+  crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.5.0-beta4/html2canvas.min.js" crossorigin="anonymous"></script>
+
+  <script type="text/javascript">
+
+  	$(document).ready(function() {
+
+  		// To store the HTML formated Article data
+  		var articleContent = null;
+
+  		$.ajax({
+		    url: 'https://www.the-tls.co.uk/wp-json/wp/v2/tls_articles/public/141904',
+		    type: "GET",
+		    cache: false,
+		    dataType: 'json',
+		    timeout: 10000,
+		    success: function(data) {
+		    	const postData = data.post;
+		    	console.log(postData);
+
+		    	//<img src="${postData.image_url}">
+
+		    	// Generating Article Content from the data retrived from the API
+		    	articleContent = `<div class="offset-md-3 col-md-6">
+									<div class="row">
+										<div class="col-md-6">
+											<h6><a id="article-title" class="text-left text-uppercase" 
+											href="${postData.section.link}">
+												${postData.section.name}
+											</a><h6>
+										</div>
+										<div class="col-md-6">
+											<h6 id="article-date" class="text-right text-uppercase">${postData.post_date}</h6>
+										</div>
+									</div>
+									<div>
+										<img src="${postData.image_url}">
+										<p class="lightHighlight">
+											<i>${postData.thumbnail_alt_text}</i><br>
+											<i>© Splash News</i>
+										</p>
+									<div>
+									<div>
+										<h1>${postData.title}</h1>
+										<h5>${postData.excerpt[0]}</h5>
+									<div>
+									<div id="article-content" class="mt-4">
+										<h5>${postData.article_author_name}</h5>
+										${postData.content}
+									</div>
+								 </div>`;
+
+				$("#article").html(articleContent);
+		    },
+		    error: function(e, msg) {
+		    	console.log(msg);
+		    }
+		});
+
+  		generateContentAsPDF = function() {
+  			if(articleContent !== null) {
+		  		html2canvas($("#article"),{
+				   onrendered:function(canvas){
+					    var imgData=canvas.toDataURL("image/png");
+					    var imgWidth = 210; 
+						var pageHeight = 295;  
+						var imgHeight = canvas.height * imgWidth / canvas.width;
+						var heightLeft = imgHeight;
+						var doc = new jsPDF('p', 'mm');
+						var position = 0;
+
+						doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+						heightLeft -= pageHeight;
+
+						while (heightLeft >= 0) {
+						  position = heightLeft - imgHeight;
+						  doc.addPage();
+						  doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+						  heightLeft -= pageHeight;
+						}
+						doc.save( 'file.pdf');
+				   }
+				});
+		  	}
+	  	}
+
+  	});
+
+  </script>
+</html>
